@@ -9,4 +9,143 @@ knitr::opts_chunk$set(echo = TRUE)
 Material del curso:
 https://lcolladotor.github.io/rnaseq_LCG-UNAM_2021/
 
+Observaciones de algunos paquetes de bioconductor 
+https://docs.google.com/spreadsheets/d/1FI6LG__AuRNYuPZNEMD-Bo0CpQmayd7ZqtjBF7uf_ts/edit#gid=0
+
+```{r summarizedExperiment}
+## Lets build our first SummarizedExperiment object
+library("SummarizedExperiment")
+## ?SummarizedExperiment
+
+## De los ejemplos en la ayuda oficial
+
+## Creamos los datos para nuestro objeto de tipo SummarizedExperiment
+## para 200 genes a lo largo de 6 muestras
+nrows <- 200
+ncols <- 6
+## Números al azar de cuentas
+set.seed(20210223)
+counts <- matrix(runif(nrows * ncols, 1, 1e4), nrows)
+## Información de nuestros genes
+rowRanges <- GRanges(
+    rep(c("chr1", "chr2"), c(50, 150)),
+    IRanges(floor(runif(200, 1e5, 1e6)), width = 100),
+    strand = sample(c("+", "-"), 200, TRUE),
+    feature_id = sprintf("ID%03d", 1:200)
+)
+names(rowRanges) <- paste0("gene_", seq_len(length(rowRanges)))
+## Información de nuestras muestras
+colData <- DataFrame(
+    Treatment = rep(c("ChIP", "Input"), 3),
+    row.names = LETTERS[1:6]
+)
+## Juntamos ahora toda la información en un solo objeto de R
+rse <- SummarizedExperiment(
+    assays = SimpleList(counts = counts),
+    rowRanges = rowRanges,
+    colData = colData
+)
+
+```
+```{r }
+dim(rse)
+dimnames(rse)
+
+## Ver los "unique" levels (cromosomas)
+seqlevels(rse)
+
+## Tabla comprimida por repetición de cada level (chromosoma)
+seqnames(rowRanges(rse)) 
+
+#Cuanto pesa el objeto?
+pryr::object_size(rse)
+```
+```{r ejercicio}
+## Comando 1
+# Nota: dim genes muestras
+# Renglones, columnas 
+# Obtienes los  primeros dos genes de todas las muestras.
+
+rse[1:2, ]
+
+## Comando 2
+# Obtenemos todos los genes de las muestras A, D y F. 
+rse[, c("A", "D", "F")]
+
+# class → Nombre del objeto 
+# dim → Dimesiones de la matriz 
+# assay → Son los datos de un experimento, pueden haber varias tablas con distintos datos.
+          # nombre del assay.
+# rownames → el nombre de los genes 
+# rowData names → nombre general de las filas 
+# colnames → el nombre de las muestras 
+# colData names → nombre general de las columnas (muestras)
+
+rse
+assay(rse)
+head(assay(rse))
+head(assay(rse[, c("A", "D", "F")]))
+which(colnames(rse)%in%c('A','D','F')) 
+```
+```{r iSEE}
+iSEE::iSEE(rse)
+```
+
+```{r}
+sce_layer <- spatialLIBD::fetch_data("sce_layer")
+sce_layer
+pryr::object_size(sce_layer)
+```
+
+```{r}
+iSEE::iSEE(sce_layer)
+```
+```{r}
+library("recount3")
+
+human_projects <- available_projects()
+```
+
+
+```{r}
+## Encuentra tu proyecto de interés. Aquí usaremos
+## SRP009615 de ejemplo
+proj_info <- subset(
+    human_projects,
+    project == "SRP009615" & project_type == "data_sources"
+)
+## Crea un objetio de tipo RangedSummarizedExperiment (RSE)
+## con la información a nivel de genes
+rse_gene_SRP009615 <- create_rse(proj_info)
+```
+
+```{r}
+## Explora los proyectos disponibles de forma interactiva
+proj_info_interactive <- interactiveDisplayBase::display(human_projects)
+## Selecciona un solo renglón en la tabla y da click en "send".
+
+## Aquí verificamos que solo seleccionaste un solo renglón.
+stopifnot(nrow(proj_info_interactive) == 1)
+## Crea el objeto RSE
+rse_gene_interactive <- create_rse(proj_info_interactive)
+```
+
+```{r}
+## Explora el objeto RSE
+rse_gene_SRP009615
+```
+
+```{r}
+## Explora los proyectos disponibles de forma interactiva
+proj_info_interactive <- interactiveDisplayBase::display(human_projects)
+## Selecciona un solo renglón en la tabla y da click en "send".
+
+## Aquí verificamos que solo seleccionaste un solo renglón.
+stopifnot(nrow(proj_info_interactive) == 1)
+## Crea el objeto RSE
+rse_gene_interactive <- create_rse(proj_info_interactive)
+```
+
+
+
 
