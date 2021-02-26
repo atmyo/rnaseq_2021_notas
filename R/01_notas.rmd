@@ -6,9 +6,6 @@ output: html_document
 Material del curso:
 https://lcolladotor.github.io/rnaseq_LCG-UNAM_2021/
 
-Observaciones de algunos paquetes de bioconductor 
-https://docs.google.com/spreadsheets/d/1FI6LG__AuRNYuPZNEMD-Bo0CpQmayd7ZqtjBF7uf_ts/edit#gid=0
-
 Para crear un proyecto de R y ligarlo a GitHub 
 
 1. Crear proyecto 
@@ -62,4 +59,9 @@ postcards::create_postcard(template = "onofre")
 ```
 
 Biconductor y paquetes 
+"Analysis and comprehension of high-throughput genomic data"
+http://bioconductor.org/packages/3.12/bioc/
 
+Los paquetes sirven principalmente para: software, anotación, experimentos, flujo de trabajo.
+
+Observaciones de algunos paquetes de bioconductor | trabajo en equipo  https://docs.google.com/spreadsheets/d/1FI6LG__AuRNYuPZNEMD-Bo0CpQmayd7ZqtjBF7uf_ts/edit#gid=0
