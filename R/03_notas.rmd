@@ -111,4 +111,13 @@ ggplot(as.data.frame(colData(rse_gene_SRP045638)), aes(y = assigned_gene_prop, x
     xlab("Age Group")
 ```
  
+```{r}
+```{r}
+idTodos <- rowData(rse_gene_SRP045638)$gene_id 
+idHeat <- rowData(exprs_heatmap)$gene_id 
+namesHeat <- rowData(rse_gene_SRP045638)$gene_name[match(idHeat,idTodos)] 
+rownames(exprs_heatmap) <- namesTodo 
+pheatmap( exprs_heatmap, cluster_rows = TRUE, cluster_cols = TRUE, show_rownames = TRUE, show_colnames = FALSE, annotation_col = df )
+```
+```
 
