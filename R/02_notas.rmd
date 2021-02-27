@@ -3,13 +3,13 @@ title: "02_notas"
 output: html_document
 ---
 
-Summarized Experiment
+* Summarized Experiment
 
 Summarize experiment es un objeto cuya parte principal consiste de tres partes unidas. 
-    - rowRanges → tabla de información de los genes, un renglon por cada gen. Es un 
-                objeto tipo genomic ranges.
+    - rowRanges → tabla de información de las regiones genomicas y anotación de los genes, un renglon               por cada gen. Es un objeto tipo genomic ranges.
     - Assays → contiene los datos [genes, muestras]. Puede ser una matriz o más.
-    - colData → un renglón por cada muestra, una columna por cada variable.
+    - colData → describe a las muestras. Un renglón por cada muestra, una columna por cada variable.
+    - rowData → Objeto que describe a las filas, genes. 
     
 Nota: rtrach layer es un paquete que te permite leer datos de distintos formatos bioinformáticos (BED, GTF, etc).
                   
@@ -47,114 +47,152 @@ rse <- SummarizedExperiment(
     colData = colData
 )
 
+## Exploremos el objeto resultante
 rse
-colData
 ```
+class → Nombre de la clase  
+dim → Dimesiones de la matriz 
+assay → Son los datos de un experimento, pueden haber varias tablas con distintos datos
+        En este caso el nombre de la matriz es counts
+rownames → El nombre de los genes 
+rowData names → Nombre de las columnas del objeto rowData.
+colnames → El nombre de las muestras 
+colData names → Nombre de las columnas del objejto colData.
 
-
-```{r }
+```{r}
+## tabla assay
+head(assay(rse))
+```
+```{r}
 dim(rse)
 dimnames(rse)
+rowRanges(rse)
+```
 
+```{r}
 ## Ver los "unique" levels (cromosomas)
 seqlevels(rse)
-
-## Tabla comprimida por repetición de cada level (chromosoma)
+## Tabla comprimida por repetición de cada seqlevel (chromosoma)
 seqnames(rowRanges(rse)) 
-
+```
+```{r }
 #Cuanto pesa el objeto?
 pryr::object_size(rse)
 ```
+Ejercicio 1 | interpretar comando 
 ```{r ejercicio}
-## Comando 1
-# Nota: dim genes muestras
-# Renglones, columnas 
+# Comando 1
 # Obtienes los  primeros dos genes de todas las muestras.
-
 rse[1:2, ]
 
-## Comando 2
-# Obtenemos todos los genes de las muestras A, D y F. 
+# Comando 2
+# Obtenemos todos los datos de todos los genes en las muestras A, D y F. 
 rse[, c("A", "D", "F")]
-
-# class → Nombre del objeto 
-# dim → Dimesiones de la matriz 
-# assay → Son los datos de un experimento, pueden haber varias tablas con distintos datos.
-          # nombre del assay.
-# rownames → el nombre de los genes 
-# rowData names → nombre general de las filas 
-# colnames → el nombre de las muestras 
-# colData names → nombre general de las columnas (muestras)
-
-rse
-assay(rse)
-head(assay(rse))
 head(assay(rse[, c("A", "D", "F")]))
+
+# Nota. Tras bambalinas:
 which(colnames(rse)%in%c('A','D','F')) 
 ```
+```{r}
+rse$Treatment
+```
+
 ```{r iSEE}
+## Explora el objeto rse de forma interactiva
+library("iSEE")
 iSEE::iSEE(rse)
 ```
 
-```{r}
-sce_layer <- spatialLIBD::fetch_data("sce_layer")
-sce_layer
-pryr::object_size(sce_layer)
-```
+* spatialLIBD
 
 ```{r}
-iSEE::iSEE(sce_layer)
+## Descarguemos unos datos de spatialLIBD
+sce_layer <- spatialLIBD::fetch_data("sce_layer")
+sce_layer
+
+## Revisemos el tamaño de este objeto
+pryr::object_size(sce_layer)
 ```
+Ejercicio 2 | iSEE
+```{r}
+# 2.1 Replicar gráfica 
+iSEE::iSEE(sce_layer)
+
+# 2.2 Explora en con un heatmap la expresión de los genes MOBP, MBP y PCP4. Si hacemos un clustering (agrupamos los genes), ¿cúales genes se parecen más?, ¿En qué capas se expresan más los genes MOBP y MBP?
+
+short<-sce_layer[which(rowData(sce_layer)$gene_name%in%c("MOBP","MBP","PCP4")),]
+iSEE::iSEE(short)
+
+# Los genes ENSG00000168314 (MOBP) y ENSG00000197971 (MBP) son los que se parecen más. Estos genes se 
+# expresan más en la sustancia  blanca del cerebro (WB).
+
+# Las figuras se encuentran en ~/rnaseq_2021_notas/figuras/ReducedDimensionPlot.pdf y 
+# ~/rnaseq_2021_notas/figuras/ComplexHeatmapPlot1.pdf
+```
+
+* recount3
+
+Podemos obtener datos de RNAseq de raton y humano, los organismos con mayor estudios de RNAseq.
+
 ```{r}
 library("recount3")
 
 human_projects <- available_projects()
 ```
 
+Tomamos el id del experimento de interés y se crea un objeto.
 
 ```{r}
-## Encuentra tu proyecto de interés. Aquí usaremos
-## SRP009615 de ejemplo
+## Explora los proyectos disponibles de forma interactiva
+proj_info_interactive <- interactiveDisplayBase::display(human_projects)
+## Selecciona un solo renglón en la tabla y da click en "send".
+
+## Aquí verificamos que solo seleccionaste un solo renglón.
+stopifnot(nrow(proj_info_interactive) == 1)
+
+## Crea el objeto RSE
+rse_gene_interactive <- create_rse(proj_info_interactive)
+```
+
+```{r}
+## Encuentra tu proyecto de interés. Aquí usaremos SRP009615 de ejemplo
 proj_info <- subset(
     human_projects,
     project == "SRP009615" & project_type == "data_sources"
 )
-## Crea un objetio de tipo RangedSummarizedExperiment (RSE)
+## Crea un objeto de tipo RangedSummarizedExperiment (RSE)
 ## con la información a nivel de genes
 rse_gene_SRP009615 <- create_rse(proj_info)
 ```
 
 ```{r}
-## Explora los proyectos disponibles de forma interactiva
-proj_info_interactive <- interactiveDisplayBase::display(human_projects)
-## Selecciona un solo renglón en la tabla y da click en "send".
-
-## Aquí verificamos que solo seleccionaste un solo renglón.
-stopifnot(nrow(proj_info_interactive) == 1)
-## Crea el objeto RSE
-rse_gene_interactive <- create_rse(proj_info_interactive)
-```
-
-```{r}
 ## Explora el objeto RSE
 rse_gene_SRP009615
+
+colData(rse_gene_SRP009615)
+```
+```{r}
+## Convirtamos las cuentas por nucleotido a cuentas por lectura
+## usando compute_read_counts().
+## Para otras transformaciones como RPKM y TPM, revisa transform_counts().
+assay(rse_gene_SRP009615, "counts") <- compute_read_counts(rse_gene_SRP009615)
 ```
 
 ```{r}
-## Explora los proyectos disponibles de forma interactiva
-proj_info_interactive <- interactiveDisplayBase::display(human_projects)
-## Selecciona un solo renglón en la tabla y da click en "send".
-
-## Aquí verificamos que solo seleccionaste un solo renglón.
-stopifnot(nrow(proj_info_interactive) == 1)
-## Crea el objeto RSE
-rse_gene_interactive <- create_rse(proj_info_interactive)
+## Para este estudio en específico, hagamos más fácil de usar la
+## información del experimento
+rse_gene_SRP009615 <- expand_sra_attributes(rse_gene_SRP009615)
+colData(rse_gene_SRP009615)[
+    ,
+    grepl("^sra_attribute", colnames(colData(rse_gene_SRP009615)))
+]
 ```
+Ahora estamos listos para usar otras herramientas para el análisis de los datos.
 
+Ejercicio 3 | reproducir una imagen son iSEE
 ```{r}
-idTodos <- rowData(rse_gene_SRP045638)$gene_id 
-idHeat <- rowData(exprs_heatmap)$gene_id 
-namesHeat <- rowData(rse_gene_SRP045638)$gene_name[match(idHeat,idTodos)] 
-rownames(exprs_heatmap) <- namesTodo 
-pheatmap( exprs_heatmap, cluster_rows = TRUE, cluster_cols = TRUE, show_rownames = TRUE, show_colnames = FALSE, annotation_col = df )
+iSEE::iSEE(rse_gene_SRP009615)
+
+# La figura se encuentra en ~/rnaseq_2021_notas/figuras/FeatureAssayPlot1.pdf
 ```
+
