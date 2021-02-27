@@ -3,10 +3,20 @@ title: "02_notas"
 output: html_document
 ---
 
+Summarized Experiment
+
+Summarize experiment es un objeto cuya parte principal consiste de tres partes unidas. 
+    - rowRanges → tabla de información de los genes, un renglon por cada gen. Es un 
+                objeto tipo genomic ranges.
+    - Assays → contiene los datos [genes, muestras]. Puede ser una matriz o más.
+    - colData → un renglón por cada muestra, una columna por cada variable.
+    
+Nota: rtrach layer es un paquete que te permite leer datos de distintos formatos bioinformáticos (BED, GTF, etc).
+                  
 ```{r summarizedExperiment}
 ## Lets build our first SummarizedExperiment object
 library("SummarizedExperiment")
-## ?SummarizedExperiment
+?SummarizedExperiment
 
 ## De los ejemplos en la ayuda oficial
 
@@ -37,7 +47,10 @@ rse <- SummarizedExperiment(
     colData = colData
 )
 
+rse
+colData
 ```
+
 
 ```{r }
 dim(rse)
