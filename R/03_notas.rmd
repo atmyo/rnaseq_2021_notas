@@ -273,7 +273,7 @@ useful link → https://stats.stackexchange.com/questions/160255/voom-mean-varia
 ```{r}
 eb_results <- eBayes(lmFit(vGene))
 
-# topTable → extracts a table of the top-ranked genes from a linear model fit.
+# topTable → extracts a table of the top-ranked genes (the filtered genes you give to the function) from a linear model fit.
 
 de_results <- topTable(
     eb_results,
