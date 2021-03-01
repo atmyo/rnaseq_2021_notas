@@ -1,23 +1,19 @@
 ---
-stitle: "ProyectoRNAseq"
-author: "Athena Tamayo"
-date: "27/2/2021"
+title: Proyecto RNAseq
+author: Athena Tamayo
+date: 27/2/2021
 output: html_document
 ---
 
-Específicaciones del proyecto
-  - Con datos de algún estudio disponible vía recount3, hagan un análisis de expresión diferencial.
-  - Incluyan al menos 3 gráficas en su reporte.
-  - Su reporte debe ser público y estar listado en el Google Sheet del curso.
-  
-Acontinuación se hará un anális de expresión diferencial con los datos de RNA-seq del proyecto SRP186637.
-Este proyecto busca determinar si hacer ejercicio tiene un impacto especifico en la regulación circadiana
+A Continuación se hará un análisis de expresión diferencial con los datos de RNA-seq del proyecto SRP186637.
+Este proyecto busca determinar si hacer ejercicio tiene un impacto específico en la regulación circadiana
 de las vías metabólicas del músculo esquelético dependiendo de cuando se haga durante el transcurso del día. 
-Las muestras provienen de cuatro grupos de ratones, dos grupos sedentarios (contro) y dos grupos que se 
-ejercitan que, a su vez, se dividen en un grupo que hace su actividad en la fase activa temprana (ZT15) o en
-la fase de reposo temprana (ZT3). Para más información consulte el siguiente artículo: https://www.cell.com/action/showPdf?pii=S1550-4131%2819%2930183-4
+Las muestras provienen de cuatro grupos de ratones, dos grupos sedentarios (control) y dos grupos que se 
+ejercitan, los cuales a su vez se dividen en un grupo que hace su actividad durante la fase activa temprana 
+(ZT15) y otro que la hace durante la fase de reposo temprana (ZT3). Para más información consulte el siguiente 
+artículo: https://www.cell.com/action/showPdf?pii=S1550-4131%2819%2930183-4
 
-## Obtención de datos 
+## <span style="color:darkblue">Obtención de datos</span> 
 
 Obtengamos todos los proyectos con datos de ratón en recount3
 ```{r}
@@ -36,18 +32,18 @@ rse_gene_SRP186637 <- create_rse(
 )
 ```
 
-Cambiemos las cuentas por nucleotido a cuentas por lectura.
+Cambiemos las cuentas por nucleótido a cuentas por lectura.
 ```{r}
 assay(rse_gene_SRP186637, "counts") <- compute_read_counts(rse_gene_SRP186637)
 ```
 
-## Filtrado 
+## <span style="color:darkblue">Filtrado </span> 
 
 Primero chequemos que las muestras tengan los mismos atributos.
 ```{r}
 rse_gene_SRP186637$sra.sample_attributes[1:5]
 ```
-Las muestras parecen tener los mismso atributos. Entonces, sigamos explorando los atributos.
+Las muestras parecen tener los mismos atributos. Entonces, sigamos explorando los atributos.
 ```{r}
 rse_gene_SRP186637 <- expand_sra_attributes(rse_gene_SRP186637)
 
@@ -56,7 +52,7 @@ colData(rse_gene_SRP186637)[
     grepl("^sra_attribute", colnames(colData(rse_gene_SRP186637)))
 ]
 ```
-Los atributos "phase", "treatment" y "zt" son de tipo caracter cuando deberían de ser factores. Corrijamos esto.
+Los atributos "phase", "treatment" y "zt" son de tipo carácter cuando deberían de ser factores. Corrijamos esto.
 ```{r}
 rse_gene_SRP186637$sra_attribute.phase <- factor(rse_gene_SRP186637$sra_attribute.phase)
 rse_gene_SRP186637$sra_attribute.treatment <- factor(rse_gene_SRP186637$sra_attribute.treatment)
@@ -70,34 +66,37 @@ summary(as.data.frame(colData(rse_gene_SRP186637)[
     grepl("^sra_attribute.phase|treatment|zt", colnames(colData(rse_gene_SRP186637)))
 ]))
 ```
-## Análisis de los datos 
+## <span style="color:darkblue">Análisis de los datos </span> 
 
-Nuestra variable de interés será la hora en la que se expuso a los ratónes al tratamiento; durante la fase activa (ZT15)
-ó de reposo (ZT6). Hagamos una variable que nos indique el tratamineto que recibio el ratón de donde viene la muestra.
+Nuestra variable de interés será la hora en la que se expuso a los ratones al tratamiento; durante la fase activa (ZT15)
+ó de reposo (ZT6). Hagamos una variable que nos indique esto.
 ```{r}
 rse_gene_SRP186637$phase <- factor(ifelse(rse_gene_SRP186637$sra_attribute.phase == "Active phase (ZT15)", "Active", "Rest"))
 table(rse_gene_SRP186637$phase)
 ```
-Para posteriormente eliminar las muestras de mala cálidad, calculemos la proporción de lecturas asignada a cada muestra y las variables
-de control de cálidad correspondientes.
+Para posteriormente eliminar las muestras de mala calidad, calculemos la proporción de lecturas asignada a cada muestra y las variables
+de control de calidad correspondientes.
 ```{r}
 # Proporción de lecturas asiganda a cada gen 
 rse_gene_SRP186637$assigned_gene_prop <- rse_gene_SRP186637$recount_qc.gene_fc_count_all.assigned / rse_gene_SRP186637$recount_qc.gene_fc_count_all.total
 
-# Variables de control de cálidad
+# Variables de control de calidad
 summary(rse_gene_SRP186637$assigned_gene_prop)
 ```
-Como podemos ver, las variables de control de cálidad no difieren mucho entre ambos grupos. 
+Como podemos ver, las variables de control de calidad no difieren mucho entre ambos grupos. 
 ```{r}
 with(colData(rse_gene_SRP186637), tapply(assigned_gene_prop, phase, summary))
 ```
-Gafiquemos la frecuencia con la que cierta proporción de lecturas se le asigna a cada muestra. 
-```{r}
+Grafiquemos la frecuencia con la que cierta proporción de lecturas se le asigna a cada muestra. 
+```{r} 
+# Guardemos nuestro objeto original
+rse_gene_SRP186637_unfiltered <- rse_gene_SRP186637
+
 # Eliminemos a muestras malas
 hist(rse_gene_SRP186637$assigned_gene_prop)
 ```
 Que a una muestra se le asigne menos de 20% de las lecturas ó más del 50% es atípico. Por lo tanto, se eliminarán aquellas 
-muestras cuya proporcion de genes asignados se menor a 0.2 o mayor a 0.5, estas siendo 4 en total.
+muestras cuya proporción de genes asignados sea menor a 0.2 o mayor a 0.5, estás siendo 4 en total.
 ```{r}
 table(rse_gene_SRP186637$assigned_gene_prop < 0.2 | rse_gene_SRP186637$assigned_gene_prop > 0.5)
 ```
@@ -122,10 +121,10 @@ dim(rse_gene_SRP186637)
 # Porcentaje de genes que sobrevivió al filtrado 
 round(nrow(rse_gene_SRP186637) / nrow(rse_gene_SRP186637_unfiltered) * 100, 2)
 ```
-## Normalización de los datos 
+## <span style="color:darkblue">Normalización de los datos </span> 
 
-Tomando en cuenta que podría haber un sesgo por la composición de las librerías, el cual implica que artificialmente se obsreve 
-expresion diferencial, se deben de normalizar los datos. Para  esto usaremos la función calcNormFactors del paquete edgeR.
+Tomando en cuenta que podría haber un sesgo por la composición de las librerías, el cual implica que artificialmente se observe 
+expresión diferencial, se deben de normalizar los datos. Para  esto usaremos la función calcNormFactors del paquete edgeR.
 ```{r}
 library("edgeR") 
 dge <- DGEList(
@@ -135,7 +134,7 @@ dge <- DGEList(
 dge <- calcNormFactors(dge)
 ```
 
-## Análisis de expresión diferencial 
+## <span style="color:darkblue">Análisis de expresión diferencial </span>
 
 Los conteos cercanas a 0 normalmente tienen desviaciones estándar bajas. Por esto es necesario filtrar un poco más los datos para 
 después crear el objeto voom EList. Entonces filtraremos los genes que tienen menos de 50 conteos. 
@@ -147,8 +146,8 @@ sumCounts <- rowSums(dge$counts)
 isexpr <- sumCounts > 50
 ```
 
-Acontinuación graficaremos la proporción de genes asignada a cada muestra con respecto a la fase en la que se tomo y el tratamiento.
-Como podemos ver, en ambos casos no hay una expresión diferncial apreciable. 
+A continuación se graficará la proporción de genes asignada a cada muestra con respecto a la fase en la que se tomó y el tratamiento.
+Como podemos ver, en ambos casos no hay una expresión diferencial apreciable. 
 ```{r}
 library("ggplot2")
 ggplot(
@@ -170,9 +169,9 @@ ggplot(
     ylab("Assigned Gene Prop") +
     xlab("Treatment")
 ```
-Ahora generaremos el modelos estadístico de acuerdo a nuestras variables de interés. 
-El momento en el que se aplique el tratamiento y el tipo de tratamiento que se le aplique al ratón (ejercicio ó control) estan 
-potencialmente relacionados, mientras que el momento en el que se tome la muestra (zt) y la proporción de genes asigandos tienen 
+Ahora generemos el modelos estadístico de acuerdo a nuestras variables de interés. 
+El momento en el que se aplique el tratamiento y el tipo de tratamiento que se le aplique al ratón (ejercicio ó control) están 
+potencialmente relacionados, mientras que el momento en el que se tome la muestra (zt) y la proporción de genes asignados tienen 
 efectos aditivos. 
 ```{r}
 mod <- model.matrix(~ phase*sra_attribute.treatment + sra_attribute.zt + assigned_gene_prop,
@@ -181,7 +180,7 @@ mod <- model.matrix(~ phase*sra_attribute.treatment + sra_attribute.zt + assigne
 colnames(mod)
 ```
 El gráfico de voom muestra cómo el coeficiente de variación de los conteos depende del tamaño del conteo, por esto eliminamos aquellos 
-genes cuyo conteo es menor a 50. El gráfico muestra la desviación estadar de los valores de expresión de cada gen en el eje y, y el logaritmo
+genes cuyo conteo es menor a 50. El gráfico muestra la desviación estándar de los valores de expresión de cada gen en el eje y, y el logaritmo
 base dos de el tamaño del conteo más 0.5 en el eje x.
 ```{r}
 library("limma")
@@ -204,17 +203,17 @@ dim(de_results)
 head(de_results)
 ```
 ```{r}
-# Genes diferencialmente expresados entre los grupos a los que se les aplicó el tratamiento durante la fase activa y de resposo con FDR < 5%
+# Genes diferencialmente expresados entre los grupos a los que se les aplicó el tratamiento durante la fase activa y de reposo con FDR < 5%
 table(de_results$adj.P.Val < 0.05)
 ```
 Visualicemos los resultados estadísticos. plotMA grafica el cambio de expresión entre los grupos a los que se les aplicó el 
-tratamiento durante la fase activa y en la fase de reposo. Aquí, los valores positivos significan que la expresión es mas alta
+tratamiento durante la fase activa y en la fase de reposo. Aquí, los valores positivos significan que la expresión es más alta
 cuando el tratamiento se aplicó durante la fase activa y valores negativos cuando se aplicó durante la fase de reposo. El cambio 
 de expresión (eje y) depende de la media de los conteos normalizados (eje x).
 ```{r}
 plotMA(eb_results, coef = 2)
 ```
-En un diagrama de volcán podemos nos permite observar los cambios de expresión y sus significancia a través del valor p. 
+En un diagrama de volcán podemos observar los cambios de expresión y su significancia a través del valor p. 
 Además, puede resaltar algunos genes que maximizan ambas variables. 
 
 ```{r}
@@ -223,14 +222,14 @@ volcanoplot(eb_results, coef = 2, highlight = 3, names = de_results$gene_name)
 ```{r}
 de_results[de_results$gene_name %in% c("1700071M", "Gm8213", "Nup188"), ]
 ```
-En este caso de resaltan los genes 1700071M, Gm8213, Nup188. Solo encontré información de Gm8213 y Nup188, el primero 
-siendo una nucleoporina y el segundo pseudogén predicho. Ningúno de los dos tienen una función directamente relacionada 
+En este caso se resaltan los genes 1700071M, Gm8213, Nup188. Solo encontré información de Gm8213 y Nup188, el primero 
+siendo una nucleoporina y el segundo pseudogen predicho. Ninguno de los dos tienen una función directamente relacionada 
 con nuestra hipótesis.
 
 https://www.genecards.org/cgi-bin/carddisp.pl?gene=NUP188&keywords=Nup188
 https://www.genscript.com/gene/mus-musculus/666648/gm8213.html
 
-## Visualición de genes diferencialmente expresados 
+## <span style="color:darkblue">Visualización de genes diferencialmente expresados </span>
 
 Tratemos de visualizar la expresión diferencial de los genes de acuerdo a las condiciones que analizadas en nuestro modelo.
 
@@ -281,6 +280,7 @@ library("RColorBrewer")
 col.group <- df$Phase
 levels(col.group) <- brewer.pal(nlevels(col.group), "Set1")
 ```
+
 Grafiquemos...
 ```{r}
 # MDS por momento de tratamiento
@@ -301,13 +301,14 @@ levels(col.group) <- brewer.pal(nlevels(col.group), "Set1")
 col.group <- as.character(col.group)
 plotMDS(vGene$E, labels = df$zt, col = col.group)
 ```
-## Concluciones 
 
-Desde un principio con los campos de control de cálidad se sugire que no hay expresión diferencial entre los grupos 
-a los que se les aplicó el tratamiento durante la fase activa y de reposos. Lo cual se confirma posteriormente una 
+## <span style="color:darkblue">Conclusiones</span>
+
+Desde un principio con los campos de control de calidad se sugiere que no hay expresión diferencial entre los grupos 
+a los que se les aplicó el tratamiento durante la fase activa y de reposo. Lo cual se confirma posteriormente una 
 y otra vez por los distintos gráficos. Sin embargo, es sumamente probable que este resultado se debe al 
-planteamiento del modelo y a la manera en la que se condujó el análisis. Para empezar, creo que debieron de haber 
-4 grupos como se planteo en ele experimento original en lugar de dos. Así, en lugar de sólo comparar los niveles de 
+planteamiento del modelo y a la manera en la que se condujo el análisis. Para empezar, creo que debieron de haber 
+4 grupos como se planteó en el experimento original en lugar de dos. Así, en lugar de sólo comparar los niveles de 
 expresión entre los grupos a los que se les aplicó el tratamiento en la fase activa y a los que se le aplicó en la 
 fase de reposo, se debió de hacer entre los grupos que hicieron ejercicio durante la fase activa, los que hicieron 
 durante la fase de reposo y a los que se les aplicó el control durante los mismos tiempos. Además, el tiempo en el 
