@@ -193,6 +193,10 @@ with(colData(rse_gene_SRP045638), tapply(assigned_gene_prop, prenatal, summary))
 A continuación podemos eliminar algunas muestras que consideremos de baja calidad y genes con niveles de expresión muy bajos.
 
 ```{r}
+rse_gene_SRP045638 <- rse_gene_SRP045638_unfiltered
+```
+
+```{r}
 ## Guardemos nuestro objeto entero por si luego cambiamos de opinión
 rse_gene_SRP045638_unfiltered <- rse_gene_SRP045638
 
@@ -212,6 +216,7 @@ rse_gene_SRP045638 <- rse_gene_SRP045638[, rse_gene_SRP045638$assigned_gene_prop
 
 gene_means <- rowMeans(assay(rse_gene_SRP045638, "counts"))
 summary(gene_means)
+hist(rse_gene_SRP045638$assigned_gene_prop)
 ```
 ```{r}
 ## Eliminamos genes
@@ -261,6 +266,7 @@ mod <- model.matrix(~ prenatal + sra_attribute.RIN + sra_attribute.sex + assigne
 )
 colnames(mod)
 ```
+
 Ya teniendo el modelo estadístico, podemos usar limma para realizar el análisis de expresión diferencial como tal.
 
 ```{r}
